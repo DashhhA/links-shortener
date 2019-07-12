@@ -23,12 +23,27 @@ def create_url():
     entity['link'] = link
     entity['code'] = code
     entity['total_hits'] = 0
-    ds.put(entity)
 
-    response = {
-        'long_link': link,
-        'code': code
-    }
+    query = ds.query(kind='ShortUrl')
+    query.add_filter('link', '=', link)
+
+    links = []
+
+    for l in query.fetch():
+        links.append(l['link'])
+
+    if links:
+        for l in query.fetch():
+            response = {
+                'long_link': link,
+                'code': l['code']
+            }
+    else:
+        ds.put(entity)
+        response = {
+            'long_link': link,
+            'code': code
+        }
     return jsonify(response)
 
 
@@ -50,6 +65,11 @@ def resolve_code(code):
 def generate_code(length=5):
     code = random.sample(ALPHABET, length)
     return ''.join(code)
+
+
+@app.errorhandler(404)
+def error_404(error):
+    return "<h1>Hello users, sorry there is no page with this url!</h1>"
 
 
 if __name__ == '__main__':
